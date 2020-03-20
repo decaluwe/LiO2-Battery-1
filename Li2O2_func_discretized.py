@@ -33,14 +33,14 @@ i_ext = -1e-3                       # [A/m2]
 cap = 1e-3*2.1733333                    # battery capacity
 
 Nx = 1                                  # 1D model
-Ny = 1                                  # no. cells in the y-direction
+Ny = 5                                  # no. cells in the y-direction
 Nvars = 3                               # no. of variables
 th_ca = 50e-6                           # cathode thickness [m]
 dy = th_ca/Ny                           # [m]
 d_part = 10e-6                          # carbon particle diameter [m]
 d_oxide = 2e-6                          # oxide particle diameter [m]
 th_oxide = 5e-6                         # thickness of oxide ellipsoid [m]
-V_part = 4/3 * np.pi * (d_part / 2)**3  # particle volume [m3]
+V_part = 2/3 * np.pi * (d_part / 2)**3  # particle volume [m3]
 A_part = 4 * np.pi * (d_part / 2)**2    # particle surface area [m2]
 A_int = E_carbon * A_part / V_part      # interface area [m2/m3 total]
 A_oxide = np.pi * d_oxide**2 / 4        # oxide area contacting carbon particle
