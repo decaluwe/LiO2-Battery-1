@@ -5,6 +5,7 @@ Li-O2 Battery Model:
     cathode of a Li-O2 battery. Electrolyte = 1 M LiTFSI in TEGDME
 
 """
+
 """ Load any needed modules """
 "============================================================================"
 # Brings in other complex commands as shortcuts
@@ -14,119 +15,12 @@ import cantera as ct    # Open source chemistry toolbox
 import matplotlib.pyplot as plt    # Plotting functions
 from scipy.integrate import solve_ivp    #Integrator
 
-""" BEGIN USER INPUTS """
+""" Read user inputs and initialize variables, vectors, etc. """
 "============================================================================"
-# Sets numerical values for important variables
-phi_elyte_init = -3.19            # double layer voltage [V]
-E_elyte_init = 0.5                # initial electrolyte volume fraction [-]
-E_oxide_init = 1e-12              # initial oxide volume fraction [-]
-E_binder_init = 0.                # initial binder volume fraction [-]
-E_carbon = 1. - E_elyte_init - E_binder_init - E_oxide_init      # initial carbon volume fraction [-]
+from li2o2_init import objs, params, ptr, SVptr, pltptr, SV_0, tspan
 
-# Tolerances(absolute and relative)
-atol = 1e-10
-rtol = 2.5e-6
-
-# How long integration goes [s]. Should eventually pick a c-rate and sub in
-tspan = 7824
-
-i_ext = -1e-3              # [A/m2]    c-rate will calculate this
-cap = 1e-3*2.1733333       # battery capacity
-
-Nx = 1                      # 1D model track state in each cell and each layer
-Ny = 1                      # no. of cells in the y-direction
-Nvars = 3                   # no. of variables
-th_ca = 50e-6               # cathode thickness [m]
-d_part = 10e-6              # carbon particle diameter [m]
-d_oxide = 2e-6              # oxide particle diameter [m]
-th_oxide = 5e-6             # thickness of oxide ellipsoid [m]
-C_dl = 1.1e-6               # double layer capacitance [F/m2]
-
-TP = 300, 101325             # inital temp, pressure [K, Pa]
-
-ctifile = 'LiAir_mod.cti'     # Cantera input file
-
-""" END USER INPUTS """
-"============================================================================"
-# Geometric calculations
-V_part = 4/3 * np.pi * (d_part / 2)**3  # particle volume [m3]
-A_part = 4 * np.pi * (d_part / 2)**2    # particle surface area [m2]
-A_int = E_carbon * A_part / V_part      # interface area [m2/m3 total]
-A_oxide = np.pi * d_oxide**2 / 4        # oxide area contacting carbon particle
-V_oxide = 2/3 * np.pi * (d_oxide/2)**2 * th_oxide   # oxide volume [m3]
-
-# Import necessary phases from Cantera
-# Make objects to handle calculations
-gas = ct.Solution(ctifile,'air')
-cath_b = ct.Solution(ctifile,'graphite')
-elyte = ct.Solution(ctifile,'electrolyte')
-oxide = ct.Solution(ctifile,'Li2O2')
-inter = ct.Interface(ctifile,'cathode_surf',[elyte,oxide,cath_b])
-air_elyte = ct.Interface(ctifile,'air_elyte',[gas,elyte])
-Li_b = ct.Solution(ctifile,'Lithium')
-Li_s = ct.Interface(ctifile,'Li_surface',[Li_b,elyte])
-
-# Sets states for the objects
-oxide.TP = TP
-elyte.TP = TP
-inter.TP = TP
-cath_b.TP = TP
-
-# Store these phases in a common 'objs' dict
-# This takes the data from Cantera and stores data for use
-# Python library so efficiently moves around
-# A dictionary associates a key word with a value
-objs = {}
-objs['gas'] = gas
-objs['cath_b'] = cath_b
-objs['elyte'] = elyte
-objs['oxide'] = oxide
-objs['inter'] = inter
-objs['air_elyte'] = air_elyte
-objs['Li_b'] = Li_b
-objs['Li_s'] = Li_s
-
-# Store parameters in a common 'params' dict
-# This allows for an unknown amount of arguments and any type of data to be stored at once?
-# Dictionary to keep like things together
-params = {}
-params['i_ext'] = i_ext
-params['T'] = TP[0]
-params['E_elyte_0'] = E_elyte_init
-params['E_oxide_0'] = E_oxide_init
-params['rtol'] = rtol
-params['atol'] = atol
-
-# Store pointers in a common 'ptr' dict
-# What part of vector responds to each variable
-ptr = {}
-ptr['elec'] = elyte.n_species + oxide.n_species         # electron in the  net_production_rates vector
-ptr['oxide'] = elyte.n_species                          # oxide in the net_production_rates vector
-ptr['elyte'] = np.arange(0,elyte.n_species)             # electrolyte in the net_production_rates vector
-
-# Store solution vector pointers in a common 'SVptr' dict
-# One spot for each of the species, can change Cantera file to change # and automatically adapts
-SVptr = {}
-SVptr['phi'] = 0                                        # double layer potential in solution vector SV
-SVptr['oxide'] = 1                                      # oxide density in solution vector SV
-SVptr['elyte'] = np.arange(2,elyte.n_species + 2)       # electrolyte densities in solution vector SV
-
-# Store plot pointers in a common 'pltptr' dict
-# Stored values to be used in plot
-pltptr = {}
-pltptr['O2'] = 2
-pltptr['Li+'] = 3
-pltptr['PF6-'] = 4
-pltptr['EC'] = 5
-pltptr['EMC'] = 6
-
-# Set inital values
-# This shows the equations for change over time?
-rho_oxide_init = oxide.density*params['E_oxide_0']          # oxide concentraion
-rho_elyte_init = elyte.Y*elyte.density*params['E_elyte_0']  # electrolyte concentrations
-SV0 = np.r_[phi_elyte_init,rho_oxide_init,rho_elyte_init]   # store in an array
-SV_0 = np.tile(SV0,Ny)                                      # tile SV0 based on discretization
-
+""" Import derivative/residual function """
+"""  TODO: THIS NEEDS TO BE MOVED OUT INTO ITS OWN FUNCTION, SIMILAR TO 'INIT' ABOVE"""
 # Define function to solve
 def LiO2_func(t,SV,params,objs,ptr,SVptr):
     # initializes derivative to all 0, allocates memory:
@@ -149,8 +43,8 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
 
     # Set electronic and ionic currents, and flux terms
     i_ext = params['i_ext']     # [A]
-    i_io = np.zeros(Ny + 1)     # initialize ionic current vector
-    i_el = np.zeros(Ny + 1)     # initialize electronic current vector
+    i_io = np.zeros(params['Ny'] + 1)     # initialize ionic current vector
+    i_el = np.zeros(params['Ny'] + 1)     # initialize electronic current vector
     i_el[0] = i_ext             # electric current at air/cathode boundary
     i_io[-1] = i_ext            # ionic current at cathode/elyte
 
@@ -178,17 +72,17 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
 
     # Calculate change in oxide concentration
     W_oxide = oxide.mean_molecular_weight             # oxide molecular weight
-    A_int_avail = A_int - E_oxide / th_oxide          # available interface area on carbon particle
+    A_int_avail = params['A_int'] - E_oxide / params['th_oxide']  # available interface area on carbon particle
 
     dRhoOxidedt = sdot[ptr['oxide']] * A_int_avail * W_oxide
 
     # Calculate change in double layer potential
-    i_dl = (i_io[0] - i_io[-1]) / dy - i_far*A_int_avail    # double layer current
-    dPhidt = i_dl / (C_dl*A_int)                           # double layer potential
+    i_dl = (i_io[0] - i_io[-1])*params['dyInv'] - i_far*A_int_avail    # double layer current
+    dPhidt = i_dl / (params['C_dl']*params['A_int'])                           # double layer potential
 
     # Calculate change in electrolyte concentrations
     W_elyte = elyte.molecular_weights
-    dRhoElytedt = (J_out - J_in) / dy + (sdot[ptr['elyte']] * A_int_avail * W_elyte)
+    dRhoElytedt = (J_out - J_in)*params['dyInv'] + (sdot[ptr['elyte']] * A_int_avail * W_elyte)
 
     # Load differentials into dSVdt
     # Change in time for below variables
@@ -218,19 +112,21 @@ SV = solve_ivp(lambda t, y: LiO2_func(t,y,params,objs,ptr,SVptr), [0, tspan], SV
 
 """ Plot solutions to concentrations and potentials """
 "============================================================================"
-#plt.figure(1)
-#plt.plot(SV.t,SV.y[SVptr['phi']])
-#plt.xlabel('Time (s)')
-#plt.ylabel('Double Layer Potential (V)')
+plt.figure(1)
+plt.plot(SV.t,-SV.y[SVptr['phi']])
+plt.xlabel('Time (s)')
+plt.ylabel('Double Layer Potential (V)')
 
 #plt.figure(2)
 #plt.plot(SV.t,SV.y[SVptr['oxide']])
 #plt.xlabel('Time (s)')
 #plt.ylabel('Oxide Concentration (kg/m3)')
 
+oxide = objs['oxide']
+
 E_oxide = SV.y[SVptr['oxide']] / oxide.density_mass      # oxide volume fraction
 E_elyte = params['E_elyte_0'] - (E_oxide - params['E_oxide_0'])
-A_int_avail = A_int - E_oxide / th_oxide
+A_int_avail = params['A_int'] - E_oxide / params['th_oxide']
 
 #plt.figure(3)
 #plt.plot(SV.t,E_elyte)
@@ -247,6 +143,8 @@ plt.figure(5)
 plt.plot(SV.t,A_int_avail)
 plt.xlabel('Time (s)')
 plt.ylabel('Available Area (m2)')
+
+plt.show()
 
 #plt.figure(3)
 #plt.plot(SV.t,SV.y[pltptr['O2']],SV.t,SV.y[pltptr['Li+']],SV.t,SV.y[pltptr['PF6-']],SV.t,SV.y[pltptr['EC']],SV.t,SV.y[pltptr['EMC']])
