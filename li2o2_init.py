@@ -14,7 +14,7 @@ from li2o2_inputs import *
 # Geometric calculations
 V_part = 4/3 * np.pi * (d_part / 2)**3  # particle volume [m3]
 A_part = 4 * np.pi * (d_part / 2)**2    # particle surface area [m2]
-A_int = E_carbon * A_part / V_part      # interface area [m2/m3 total]
+A_int = eps_carbon * A_part / V_part      # interface area [m2/m3 total]
 A_oxide = np.pi * d_oxide**2 / 4        # oxide area contacting carbon particle
 V_oxide = 2/3 * np.pi * (d_oxide/2)**2 * th_oxide   # oxide volume [m3]
 
@@ -55,11 +55,11 @@ objs['Li_s'] = Li_s
 params = {}
 params['i_ext'] = i_ext
 params['T'] = TP[0]
-params['E_elyte_0'] = E_elyte_init
-params['E_oxide_0'] = E_oxide_init
+params['eps_elyte_0'] = eps_elyte_init
+params['eps_oxide_0'] = eps_oxide_init
 params['rtol'] = rtol
 params['atol'] = atol
-params['Ny'] = Ny
+params['Ny'] = int(Ny)
 params['A_int'] = A_int
 params['th_oxide'] = th_oxide
 params['dyInv'] = Ny/th_ca
@@ -76,8 +76,8 @@ ptr['elyte'] = np.arange(0,elyte.n_species)             # electrolyte in the net
 # One spot for each of the species, can change Cantera file to change # and automatically adapts
 SVptr = {}
 SVptr['phi'] = 0                                        # double layer potential in solution vector SV
-SVptr['oxide'] = 1                                      # oxide density in solution vector SV
-SVptr['elyte'] = np.arange(2,elyte.n_species + 2)       # electrolyte densities in solution vector SV
+SVptr['rho oxide'] = 1                                      # oxide density in solution vector SV
+SVptr['elyte'] = range(2,elyte.n_species + 2)       # electrolyte densities in solution vector SV
 
 # Store plot pointers in a common 'pltptr' dict
 # Stored values to be used in plot
@@ -90,7 +90,7 @@ pltptr['EMC'] = 6
 
 # Set inital values
 # This shows the equations for change over time?
-rho_oxide_init = oxide.density*params['E_oxide_0']          # oxide concentraion
-rho_elyte_init = elyte.Y*elyte.density*params['E_elyte_0']  # electrolyte concentrations
+rho_oxide_init = oxide.density*params['eps_oxide_0']          # oxide concentraion
+rho_elyte_init = elyte.Y*elyte.density*params['eps_elyte_0']  # electrolyte concentrations
 SV0 = np.r_[phi_elyte_init,rho_oxide_init,rho_elyte_init]   # store in an array
 SV_0 = np.tile(SV0,Ny)                                      # tile SV0 based on discretization

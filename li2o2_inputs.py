@@ -1,10 +1,10 @@
 "========== USER INPUTS for 1D Li-O2 Battery simulation =========="
 
 phi_elyte_init = -3.19            # double layer voltage [V]
-E_elyte_init = 0.5                # initial electrolyte volume fraction [-]
-E_oxide_init = 1e-12              # initial oxide volume fraction [-]
-E_binder_init = 0.                # initial binder volume fraction [-]
-E_carbon = 1. - E_elyte_init - E_binder_init - E_oxide_init      # initial carbon volume fraction [-]
+eps_elyte_init = 0.5                # initial electrolyte volume fraction [-]
+eps_oxide_init = 1e-12              # initial oxide volume fraction [-]
+eps_binder_init = 0.                # initial binder volume fraction [-]
+eps_carbon = 1. - eps_elyte_init - eps_binder_init - eps_oxide_init      # initial carbon volume fraction [-]
 
 # Tolerances(absolute and relative)
 atol = 1e-10

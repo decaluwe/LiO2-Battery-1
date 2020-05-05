@@ -19,10 +19,10 @@ from scipy.integrate import solve_ivp
 """ BEGIN USER INPUTS """
 "============================================================================"
 phi_elyte_init = -3.19                  # double layer voltage [V]
-E_elyte_init = 0.5                      # initial electrolyte volume fraction [-]
-E_oxide_init = 1e-12                    # initial oxide volume fraction [-]
-E_binder_init = 0.                      # initial binder volume fraction [-]
-E_carbon = 1. - E_elyte_init - E_binder_init - E_oxide_init      # initial carbon volume fraction [-]
+eps_elyte_init = 0.5                      # initial electrolyte volume fraction [-]
+eps_oxide_init = 1e-12                    # initial oxide volume fraction [-]
+eps_binder_init = 0.                      # initial binder volume fraction [-]
+eps_carbon = 1. - eps_elyte_init - eps_binder_init - eps_oxide_init      # initial carbon volume fraction [-]
 
 atol = 1e-10
 rtol = 2.5e-6
@@ -42,7 +42,7 @@ d_oxide = 2e-6                          # oxide particle diameter [m]
 th_oxide = 5e-6                         # thickness of oxide ellipsoid [m]
 V_part = 2/3 * np.pi * (d_part / 2)**3  # particle volume [m3]
 A_part = 4 * np.pi * (d_part / 2)**2    # particle surface area [m2]
-A_int = E_carbon * A_part / V_part      # interface area [m2/m3 total]
+A_int = eps_carbon * A_part / V_part      # interface area [m2/m3 total]
 A_oxide = np.pi * d_oxide**2 / 4        # oxide area contacting carbon particle
 V_oxide = 2/3 * np.pi * (d_oxide/2)**2 * th_oxide   # oxide volume [m3]
 C_dl = 1.1e-6                           # double layer capacitance [F/m2]
@@ -83,8 +83,8 @@ objs['Li_s'] = Li_s
 params = {}
 params['i_ext'] = i_ext
 params['T'] = TP[0]
-params['E_elyte_0'] = E_elyte_init
-params['E_oxide_0'] = E_oxide_init
+params['eps_elyte_0'] = eps_elyte_init
+params['eps_oxide_0'] = eps_oxide_init
 params['rtol'] = rtol
 params['atol'] = atol
 
@@ -109,8 +109,8 @@ pltptr['EC'] = 5
 pltptr['EMC'] = 6
 
 # Set inital values
-rho_oxide_init = oxide.density*params['E_oxide_0']          # oxide concentraion
-rho_elyte_init = elyte.Y*elyte.density*params['E_elyte_0']  # electrolyte concentrations
+rho_oxide_init = oxide.density*params['eps_oxide_0']          # oxide concentraion
+rho_elyte_init = elyte.Y*elyte.density*params['eps_elyte_0']  # electrolyte concentrations
 SV0 = np.r_[phi_elyte_init,rho_oxide_init,rho_elyte_init]   # store in an array
 SV_0 = np.tile(SV0,Ny)                                      # tile SV0 based on discritization
 
@@ -144,9 +144,9 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
     # Set concentrations for 'next'
     rho_oxide_next = SV[SVptr['oxide']]
     rho_k_elyte_next = SV[SVptr['elyte']]
-    E_oxide = rho_oxide_next / oxide.density_mass
-    E_elyte = params['E_elyte_0'] - (E_oxide - params['E_oxide_0'])
-    rho_elyte = (sum(rho_k_elyte_next)) / E_elyte
+    eps_oxide = rho_oxide_next / oxide.density_mass
+    eps_elyte = params['eps_elyte_0'] - (eps_oxide - params['eps_oxide_0'])
+    rho_elyte = (sum(rho_k_elyte_next)) / eps_elyte
     elyte.TDY = params['T'], rho_elyte, rho_k_elyte_next
     
     # Set transport properties for 'next'
@@ -155,7 +155,7 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
     XT_next = elyte.density_mole
 
     # Set transport properties for 'this'
-    rho_k_elyte_this = elyte.Y*elyte.density*params['E_elyte_0']
+    rho_k_elyte_this = elyte.Y*elyte.density*params['eps_elyte_0']
     elyte.TDY = params['T'], rho_elyte, rho_k_elyte_this
     Xk_this = elyte.mole_fractions
     Dk_this = elyte.binary_diff_coeffs
@@ -194,9 +194,9 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
         # Set concentrations
         rho_k_elyte_next = SV[SVptr['elyte']]
         rho_oxide_next = SV[SVptr['oxide']]
-        E_oxide = rho_oxide_next / oxide.density_mass
-        E_elyte = params['E_elyte_0'] - (E_oxide - params['E_oxide_0'])
-        rho_elyte = (sum(rho_k_elyte_next)) / E_elyte
+        eps_oxide = rho_oxide_next / oxide.density_mass
+        eps_elyte = params['eps_elyte_0'] - (eps_oxide - params['eps_oxide_0'])
+        rho_elyte = (sum(rho_k_elyte_next)) / eps_elyte
         elyte.TDY = params['T'], rho_elyte, rho_k_elyte_next
 
         # Mass transport and ionic current
@@ -217,7 +217,7 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
 
         # Calculate change in oxide concentration
         W_oxide = oxide.mean_molecular_weight             # oxide molecular weight
-        A_int_avail = A_int - E_oxide / th_oxide          # available interface area on carbon particle
+        A_int_avail = A_int - eps_oxide / th_oxide          # available interface area on carbon particle
 
         dRhoOxidedt = sdot[ptr['oxide']] * A_int_avail * W_oxide
 
@@ -254,7 +254,7 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
 
     # Calculate change in oxide concentration
     W_oxide = oxide.mean_molecular_weight             # oxide molecular weight
-    A_int_avail = A_int - E_oxide / th_oxide          # available interface area on carbon particle
+    A_int_avail = A_int - eps_oxide / th_oxide          # available interface area on carbon particle
 
     dRhoOxidedt = sdot[ptr['oxide']] * A_int_avail * W_oxide
 
@@ -274,8 +274,8 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
     if 0:
         print('-----------------------------------------------------------')
         print('Phi =',Phi_cathode)
-        print('E_oxide =',E_oxide)
-        print('E_elyte =',E_elyte)
+        print('eps_oxide =',eps_oxide)
+        print('eps_elyte =',eps_elyte)
         print('sdot =',sdot)
         print('i_Far =',i_far)
         print('i_dl =',i_dl)
@@ -302,12 +302,12 @@ SV = solve_ivp(lambda t, y: LiO2_func(t,y,params,objs,ptr,SVptr), [0, tspan], SV
 #plt.xlabel('Time (s)')
 #plt.ylabel('Oxide Concentration (kg/m3)')
 
-E_oxide = SV.y[SVptr['oxide']] / oxide.density_mass      # oxide volume fraction
-E_elyte = params['E_elyte_0'] - (E_oxide - params['E_oxide_0'])
-A_int_avail = A_int - E_oxide / th_oxide
+eps_oxide = SV.y[SVptr['oxide']] / oxide.density_mass      # oxide volume fraction
+eps_elyte = params['eps_elyte_0'] - (eps_oxide - params['eps_oxide_0'])
+A_int_avail = A_int - eps_oxide / th_oxide
 
 #plt.figure(3)
-#plt.plot(SV.t,E_elyte)
+#plt.plot(SV.t,eps_elyte)
 #plt.xlabel('Time (s)')
 #plt.ylabel('Elyte Volume Fraction')
 #plt.show()
