@@ -41,7 +41,7 @@ incompressible_solid(name = "electrolyte",
 
 incompressible_solid(name = "Li2O2",
     elements = " Li O ",
-    species = " Li2O2(b) (dummy) ",
+    species = " Li2O2(b) ",
     density = (2140, 'kg/m3'),
     initial_state = state( mole_fractions = 'Li2O2(b):1.0'))
 

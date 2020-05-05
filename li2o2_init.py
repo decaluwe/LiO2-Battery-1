@@ -21,19 +21,19 @@ V_oxide = 2/3 * np.pi * (d_oxide/2)**2 * th_oxide   # oxide volume [m3]
 # Import necessary phases from Cantera
 # Make objects to handle calculations
 gas = ct.Solution(ctifile,'air')
-cath_b = ct.Solution(ctifile,'graphite')
+ca_bulk = ct.Solution(ctifile,'graphite')
 elyte = ct.Solution(ctifile,'electrolyte')
 oxide = ct.Solution(ctifile,'Li2O2')
-inter = ct.Interface(ctifile,'cathode_surf',[elyte,oxide,cath_b])
-air_elyte = ct.Interface(ctifile,'air_elyte',[gas,elyte])
-Li_b = ct.Solution(ctifile,'Lithium')
-Li_s = ct.Interface(ctifile,'Li_surface',[Li_b,elyte])
+ca_surf = ct.Interface(ctifile,'cathode_surf',[elyte, oxide, ca_bulk])
+air_elyte = ct.Interface(ctifile,'air_elyte',[gas, elyte])
+Li_bulk = ct.Solution(ctifile,'Lithium')
+Li_surf = ct.Interface(ctifile,'Li_surface',[Li_bulk, elyte])
 
 # Sets states for the objects
 oxide.TP = TP
 elyte.TP = TP
-inter.TP = TP
-cath_b.TP = TP
+ca_surf.TP = TP
+ca_bulk.TP = TP
 
 # Store these phases in a common 'objs' dict
 # This takes the data from Cantera and stores data for use
@@ -41,13 +41,13 @@ cath_b.TP = TP
 # A dictionary associates a key word with a value
 objs = {}
 objs['gas'] = gas
-objs['cath_b'] = cath_b
+objs['ca_bulk'] = ca_bulk
 objs['elyte'] = elyte
 objs['oxide'] = oxide
-objs['inter'] = inter
+objs['ca_surf'] = ca_surf
 objs['air_elyte'] = air_elyte
-objs['Li_b'] = Li_b
-objs['Li_s'] = Li_s
+objs['Li_bulk'] = Li_bulk
+objs['Li_surf'] = Li_surf
 
 # Store parameters in a common 'params' dict
 # This allows for an unknown amount of arguments and any type of data to be stored at once?
@@ -64,20 +64,31 @@ params['A_int'] = A_int
 params['th_oxide'] = th_oxide
 params['dyInv'] = Ny/th_ca
 params["C_dl"] = C_dl
-
-# Store pointers in a common 'ptr' dict
-# What part of vector responds to each variable
-ptr = {}
-ptr['elec'] = elyte.n_species + oxide.n_species         # electron in the  net_production_rates vector
-ptr['oxide'] = elyte.n_species                          # oxide in the net_production_rates vector
-ptr['elyte'] = np.arange(0,elyte.n_species)             # electrolyte in the net_production_rates vector
+params['i_Li_elyte'] = elyte.species_index(li_elyte_name)
 
 # Store solution vector pointers in a common 'SVptr' dict
 # One spot for each of the species, can change Cantera file to change # and automatically adapts
 SVptr = {}
-SVptr['phi'] = 0                                        # double layer potential in solution vector SV
-SVptr['rho oxide'] = 1                                      # oxide density in solution vector SV
-SVptr['elyte'] = range(2,elyte.n_species + 2)       # electrolyte densities in solution vector SV
+
+# Variables per finite volume (aka 'node'): elyte electric potential, oxide 
+#     density, electrolyte species densities
+nvars_node = int(elyte.n_species + 2)
+
+# double layer potential in solution vector SV
+SVptr['phi_dl'] = np.arange(0,nvars_node*Ny,nvars_node, \
+    dtype='int')                                     
+# oxide mass density in solution vector SV
+SVptr['rho oxide'] = np.arange(1,nvars_node*Ny, nvars_node, \
+    dtype='int')                                      
+# electrolyte species mass densities in solution vector SV
+SVptr['rho_k elyte'] = np.ndarray(shape=(Ny, elyte.n_species),\
+    dtype='int')       
+for i in range(Ny):
+    SVptr['rho_k elyte'][i,:] = range(2 + i*nvars_node, 2 + i*nvars_node + \
+         elyte.n_species)
+
+
+
 
 # Store plot pointers in a common 'pltptr' dict
 # Stored values to be used in plot

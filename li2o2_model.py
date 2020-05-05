@@ -17,12 +17,12 @@ from scipy.integrate import solve_ivp    #Integrator
 
 """ Read user inputs and initialize variables, vectors, etc. """
 "============================================================================"
-from li2o2_init import objs, params, ptr, SVptr, pltptr, SV_0, tspan
+from li2o2_init import objs, params, SVptr, pltptr, SV_0, tspan
 
 """ Import derivative/residual function """
 """  TODO: THIS NEEDS TO BE MOVED OUT INTO ITS OWN FUNCTION, SIMILAR TO 'INIT' ABOVE"""
 # Define function to solve
-def LiO2_func(t,SV,params,objs,ptr,SVptr):
+def LiO2_func(t,SV,params,objs,SVptr):
     # initializes derivative to all 0, allocates memory:
     dSVdt = np.zeros_like(SV)
 
@@ -32,13 +32,13 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
 
     #  Pulls phase objects out of storage in 'objs' so they can be used more #    conveniently.
     gas = objs['gas']
-    cath_b = objs['cath_b']
+    ca_bulk = objs['ca_bulk']
     elyte = objs['elyte']
     oxide = objs['oxide']
-    inter = objs['inter']
+    ca_surf = objs['ca_surf']
     air_elyte = objs['air_elyte']
-    Li_b = objs['Li_b']
-    Li_s = objs['Li_s']
+    Li_bulk = objs['Li_bulk']
+    Li_surf = objs['Li_surf']
 
     # Initialize electronic and ionic currents
     i_ext = params['i_ext']     # [A]
@@ -49,14 +49,13 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
 
     # Initialize electrolyte species flux vectors
     J_k_elyte = np.zeros((params['Ny']+1, int(elyte.n_species)))
-    J_in = np.zeros(elyte.n_species)
-    J_out = np.zeros(elyte.n_species)
+    J_k_elyte[-1,params['i_Li_elyte']] = i_ext/ct.faraday
 
-    # Set potentials
+    # Set electric potentials
     # Are these constant values of 0?  SCD - Yes.  We assume that the cathode 
     #   is at an electric potential of zero (i.e. it is the reference potential)
-    Phi_elyte = SV[SVptr['phi']]
-    cath_b.electric_potential = 0
+    Phi_elyte = SV[SVptr['phi_dl']]
+    ca_bulk.electric_potential = 0
     oxide.electric_potential = 0
     elyte.electric_potential = Phi_elyte
 
@@ -64,37 +63,45 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
     j = 0
 
     # Oxide volume fraction:
-    eps_oxide = SV[SVptr['rho oxide']] / oxide.density_mass    
+    eps_oxide = SV[SVptr['rho oxide'][j]] / oxide.density_mass    
     # Electrolyte volume fraction:
     eps_elyte = params['eps_elyte_0'] - (eps_oxide - params['eps_oxide_0'])
-    rho_elyte = (sum(SV[SVptr['elyte']])) / eps_elyte
-    elyte.TDY = params['T'], rho_elyte, SV[SVptr['elyte']]
+    # Electrolytte mass density (kg per m3 of electrolyte phase)
+    rho_elyte = (sum(SV[SVptr['rho_k elyte'][j]])) / eps_elyte
+    # Set electrolyte state.  Species mass densities are normalized by Cantera:
+    elyte.TDY = params['T'], rho_elyte, SV[SVptr['rho_k elyte'][j]]
 
     # Calculate net production rates at interface
-    sdot = inter.net_production_rates                 # interface production rates
+    sdot = ca_surf.net_production_rates                 # interface production rates
 
     # Calculate Faradaic current
-    i_far = -sdot[ptr['elec']] * ct.faraday            # Faradaic current
+    i_far = -ct.faraday*ca_surf.get_net_production_rates(ca_bulk)            # Faradaic current
 
     # Calculate change in oxide concentration
     W_oxide = oxide.mean_molecular_weight             # oxide molecular weight
     A_int_avail = params['A_int'] - eps_oxide / params['th_oxide']  # available interface area on carbon particle
 
-    dRhoOxidedt = sdot[ptr['oxide']] * A_int_avail * W_oxide
+    sdot_oxide = ca_surf.get_net_production_rates(oxide)
+    dRhoOxidedt = sdot_oxide * A_int_avail * W_oxide
 
     # Calculate change in double layer potential
     i_dl = (i_io[0] - i_io[-1])*params['dyInv'] - i_far*A_int_avail    # double layer current
     dPhidt = i_dl / (params['C_dl']*params['A_int'])                           # double layer potential
 
     # Calculate change in electrolyte concentrations
-    W_elyte = elyte.molecular_weights
-    dRhoElytedt = (J_out - J_in)*params['dyInv'] + (sdot[ptr['elyte']] * A_int_avail * W_elyte)
+    J_k_elyte_in = J_k_elyte[j,:]
+    J_k_elyte_out  = J_k_elyte[j+1,:]
+    sdot_elyte = ca_surf.get_net_production_rates(elyte)
+
+    
+    dRhoElytedt = (J_k_elyte_in - J_k_elyte_out)*params['dyInv'] + \
+        (sdot_elyte * A_int_avail * elyte.molecular_weights)
 
     # Load differentials into dSVdt
     # Change in time for below variables
-    dSVdt[SVptr['phi']] = dPhidt                            # double layer potential
+    dSVdt[SVptr['phi_dl']] = dPhidt                            # double layer potential
     dSVdt[SVptr['rho oxide']] = dRhoOxidedt                     # oxide concentration
-    dSVdt[SVptr['elyte']] = dRhoElytedt                     # electrolyte concentration
+    dSVdt[SVptr['rho_k elyte']] = dRhoElytedt                     # electrolyte concentration
 
     if 0:
         print('-----------------------------------------------------------')
@@ -110,16 +117,16 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
 
 # Solve function using IVP solver
 # Solves variables with different changes in time?
-SV = solve_ivp(lambda t, y: LiO2_func(t,y,params,objs,ptr,SVptr), [0, tspan], SV_0, method='BDF',atol=params['atol'],rtol=params['rtol'])
+SV = solve_ivp(lambda t, y: LiO2_func(t,y,params,objs,SVptr), [0, tspan], SV_0, method='BDF',atol=params['atol'],rtol=params['rtol'])
 
-#    Phi_dl = SV.y[SVptr['phi'],-1]
+#    Phi_dl = SV.y[SVptr['phi_dl'],-1]
 
 #    return SV
 
 """ Plot solutions to concentrations and potentials """
 "============================================================================"
 plt.figure(1)
-plt.plot(SV.t,-SV.y[SVptr['phi']])
+plt.plot(SV.t,-SV.y[SVptr['phi_dl'][0]])
 plt.xlabel('Time (s)')
 plt.ylabel('Double Layer Potential (V)')
 
@@ -141,12 +148,12 @@ A_int_avail = params['A_int'] - eps_oxide / params['th_oxide']
 #plt.show()
 
 #plt.figure(4)
-#plt.plot(SV.t/3600 * -i_ext,SV.y[SVptr['phi']])
+#plt.plot(SV.t/3600 * -i_ext,SV.y[SVptr['phi_dl']])
 #plt.xlabel('Capacity (Ah/m2)')
 #plt.ylabel('Voltage (V)')
 
 plt.figure(5)
-plt.plot(SV.t,A_int_avail)
+plt.plot(SV.t,A_int_avail[0,:])
 plt.xlabel('Time (s)')
 plt.ylabel('Available Area (m2)')
 
@@ -161,7 +168,7 @@ plt.show()
 
 
 #t = SV.t
-#dl = SV.y[SVptr['phi']]
+#dl = SV.y[SVptr['phi_dl']]
 #Ck_ox = SV.y[SVptr['oxide']]
 #
 #df = DataFrame({'Time': t, 'Double Layer': dl, 'Oxide Concentration': Ck_ox})
