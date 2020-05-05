@@ -30,8 +30,7 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
     dRhoOxidedt = np.zeros_like(SV)
     dRhoElytedt = np.zeros_like(SV)
 
-    # Pull phases out of 'objs' inside function
-    #  Pulls functions out of storage so can be used.
+    #  Pulls phase objects out of storage in 'objs' so they can be used more #    conveniently.
     gas = objs['gas']
     cath_b = objs['cath_b']
     elyte = objs['elyte']
@@ -41,27 +40,34 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
     Li_b = objs['Li_b']
     Li_s = objs['Li_s']
 
-    # Set electronic and ionic currents, and flux terms
+    # Initialize electronic and ionic currents
     i_ext = params['i_ext']     # [A]
     i_io = np.zeros(params['Ny'] + 1)     # initialize ionic current vector
     i_el = np.zeros(params['Ny'] + 1)     # initialize electronic current vector
     i_el[0] = i_ext             # electric current at air/cathode boundary
-    i_io[-1] = i_ext            # ionic current at cathode/elyte
+    i_io[-1] = i_ext            # ionic current at cathode/elyte boundary
 
+    # Initialize electrolyte species flux vectors
+    J_k_elyte = np.zeros((params['Ny']+1, int(elyte.n_species)))
     J_in = np.zeros(elyte.n_species)
     J_out = np.zeros(elyte.n_species)
 
     # Set potentials
-    # Are these constant values of 0?
-    Phi_cathode = SV[SVptr['phi']]
+    # Are these constant values of 0?  SCD - Yes.  We assume that the cathode 
+    #   is at an electric potential of zero (i.e. it is the reference potential)
+    Phi_elyte = SV[SVptr['phi']]
     cath_b.electric_potential = 0
     oxide.electric_potential = 0
-    elyte.electric_potential = Phi_cathode
+    elyte.electric_potential = Phi_elyte
 
-    # Set mass fractions and electrolyte properties
-    eps_oxide = SV[SVptr['rho oxide']] / oxide.density_mass      # oxide volume fraction
+    # Look at first node:
+    j = 0
+
+    # Oxide volume fraction:
+    eps_oxide = SV[SVptr['rho oxide']] / oxide.density_mass    
+    # Electrolyte volume fraction:
     eps_elyte = params['eps_elyte_0'] - (eps_oxide - params['eps_oxide_0'])
-    rho_elyte = (sum(SV[SVptr['elyte'])) / eps_elyte
+    rho_elyte = (sum(SV[SVptr['elyte']])) / eps_elyte
     elyte.TDY = params['T'], rho_elyte, SV[SVptr['elyte']]
 
     # Calculate net production rates at interface
@@ -87,7 +93,7 @@ def LiO2_func(t,SV,params,objs,ptr,SVptr):
     # Load differentials into dSVdt
     # Change in time for below variables
     dSVdt[SVptr['phi']] = dPhidt                            # double layer potential
-    dSVdt[SVptr['oxide']] = dRhoOxidedt                     # oxide concentration
+    dSVdt[SVptr['rho oxide']] = dRhoOxidedt                     # oxide concentration
     dSVdt[SVptr['elyte']] = dRhoElytedt                     # electrolyte concentration
 
     if 0:
@@ -124,7 +130,7 @@ plt.ylabel('Double Layer Potential (V)')
 
 oxide = objs['oxide']
 
-eps_oxide = SV.y[SVptr['oxide']] / oxide.density_mass      # oxide volume fraction
+eps_oxide = SV.y[SVptr['rho oxide']] / oxide.density_mass      # oxide volume fraction
 eps_elyte = params['eps_elyte_0'] - (eps_oxide - params['eps_oxide_0'])
 A_int_avail = params['A_int'] - eps_oxide / params['th_oxide']
 
