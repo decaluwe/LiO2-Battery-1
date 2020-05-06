@@ -20,14 +20,15 @@ V_oxide = 2/3 * np.pi * (d_oxide/2)**2 * th_oxide   # oxide volume [m3]
 
 # Import necessary phases from Cantera
 # Make objects to handle calculations
-gas = ct.Solution(ctifile,'air')
-ca_bulk = ct.Solution(ctifile,'graphite')
+gas = ct.Solution(ctifile,'oxygen')
+ca_bulk = ct.Solution(ctifile,'conductor')
 elyte = ct.Solution(ctifile,'electrolyte')
-oxide = ct.Solution(ctifile,'Li2O2')
-ca_surf = ct.Interface(ctifile,'cathode_surf',[elyte, oxide, ca_bulk])
-air_elyte = ct.Interface(ctifile,'air_elyte',[gas, elyte])
-Li_bulk = ct.Solution(ctifile,'Lithium')
-Li_surf = ct.Interface(ctifile,'Li_surface',[Li_bulk, elyte])
+oxide = ct.Solution(ctifile,'li-oxide')
+ca_surf = ct.Interface(ctifile,'cathode-surf',[elyte, oxide, ca_bulk])
+air_elyte = ct.Interface(ctifile,'air-elyte-interface',[gas, elyte])
+Li_conductor  = ct.Solution(ctifile,'conductor')
+Li_bulk = ct.Solution(ctifile,'lithium-bulk')
+Li_surf = ct.Interface(ctifile,'anode-surf',[Li_bulk, elyte, Li_conductor])
 
 # Sets states for the objects
 oxide.TP = TP

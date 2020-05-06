@@ -27,5 +27,5 @@ C_dl = 1.1e-6               # double layer capacitance [F/m2]
 
 TP = 300, 101325             # inital temp, pressure [K, Pa]
 
-ctifile = 'LiAir_mod.cti'     # Cantera input file
+ctifile = 'lithium_o2_battery.yaml'     # Cantera input file
 li_elyte_name = 'Li+(e)'

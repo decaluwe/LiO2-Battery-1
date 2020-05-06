@@ -69,7 +69,8 @@ def LiO2_func(t,SV,params,objs,SVptr):
     # Electrolytte mass density (kg per m3 of electrolyte phase)
     rho_elyte = (sum(SV[SVptr['rho_k elyte'][j]])) / eps_elyte
     # Set electrolyte state.  Species mass densities are normalized by Cantera:
-    elyte.TDY = params['T'], rho_elyte, SV[SVptr['rho_k elyte'][j]]
+    elyte.TP = params['T'], ct.one_atm
+    elyte.Y = SV[SVptr['rho_k elyte'][j]]
 
     # Calculate net production rates at interface
     sdot = ca_surf.net_production_rates                 # interface production rates
