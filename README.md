@@ -38,24 +38,32 @@ It is highly recommended taht you install and manage dependencies via Conda.  Do
 
 Open up a terminal or anaconda prompt window and install the development version of Cantera.  The following command will install it into an environment named `li-o2-battery`.  You can replace this with any environment name you desire.
 
-> conda create -name li-o2-battery --channel cantera/label/dev cantera
+```
+conda create -name li-o2-battery --channel cantera/label/dev cantera
+```
 
 Respond with `y`, when prompted.  Then activate this environment:
 
-> conda activate li-o2-battery
-
+```
+conda activate li-o2-battery
+```
 and install the other required dependencies:
 
-> conda install numpy matplotlib scipy
+```
+conda install numpy matplotlib scipy
+```
 
 When you are done using this software environment, you can return to your normal "base" environment:
 
-> conda deactivate
+```
+conda deactivate
+```
 
 Next, download or clone the files in this repository, either manually as a .zip file, or using git for version control:
 
-> git clone https://github.com/coresresearch/lio2-battery-model.git
-
+```
+git clone https://github.com/coresresearch/lio2-battery-model.git
+```
 ## Running the Model:
 1. Edit the input files `li_o2_inputs.py` and `lithium_o2_battery.yaml` (these will eventually be merged into a single input file). You can vary the thermo-chemical properties, battery geometry or microstructure, and/or charge discharge parameters.
 2. Either via the command line, or using a Python IDE (e.g. Atom, VS Code, or PyCharm), run the file `li_o2_model.py`
