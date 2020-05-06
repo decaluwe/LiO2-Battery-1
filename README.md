@@ -1,4 +1,4 @@
-# liO2-battery-model
+# lio2-battery-model
 1 Dimensional Li-O2 Battery model
 
 This 1-D model simulates lithium-O2 battery operation.
