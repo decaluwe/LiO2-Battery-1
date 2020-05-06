@@ -30,7 +30,7 @@ Updates in the near future will include:
 The model requires several dependencies, including:
 
 - Cantera v2.5.0 or greater
-- Numpy
+- NumPy
 - Matplotlib
 - SciPy
 
