@@ -22,13 +22,13 @@ def li_o2_residual(t,SV,params,objs,SVptr):
 
     # Initialize electronic and ionic currents
     i_ext = params['i_ext']     # [A]
-    i_io = np.zeros(params['Ny'] + 1)     # initialize ionic current vector
-    i_el = np.zeros(params['Ny'] + 1)     # initialize electronic current vector
+    i_io = np.zeros(params['N_y'] + 1)     # initialize ionic current vector
+    i_el = np.zeros(params['N_y'] + 1)     # initialize electronic current vector
     i_el[0] = i_ext             # electric current at air/cathode boundary
     i_io[-1] = i_ext            # ionic current at cathode/elyte boundary
 
     # Initialize electrolyte species flux vectors
-    J_k_elyte = np.zeros((params['Ny']+1, int(elyte.n_species)))
+    J_k_elyte = np.zeros((params['N_y']+1, int(elyte.n_species)))
     J_k_elyte[-1,params['i_Li_elyte']] = i_ext/ct.faraday
 
     # Set electric potentials
@@ -41,6 +41,8 @@ def li_o2_residual(t,SV,params,objs,SVptr):
 
     # Look at first node:
     j = 0
+    for i in range(params['N_y']):
+        print(i)
 
     # Oxide volume fraction:
     eps_oxide = SV[SVptr['rho oxide'][j]] / oxide.density_mass    

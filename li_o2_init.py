@@ -7,7 +7,7 @@ import cantera as ct
 
 " Load in user inputs "
 "============================================================================"
-from li2o2_inputs import *
+from li_o2_inputs import *
 
 " Use inputs to calculate relevant quantities:"
 "============================================================================"
@@ -60,10 +60,10 @@ params['eps_elyte_0'] = eps_elyte_init
 params['eps_oxide_0'] = eps_oxide_init
 params['rtol'] = rtol
 params['atol'] = atol
-params['Ny'] = int(Ny)
+params['N_y'] = int(N_y)
 params['A_int'] = A_int
 params['th_oxide'] = th_oxide
-params['dyInv'] = Ny/th_ca
+params['dyInv'] = N_y/th_ca
 params["C_dl"] = C_dl
 params['i_Li_elyte'] = elyte.species_index(li_elyte_name)
 
@@ -76,15 +76,15 @@ SVptr = {}
 nvars_node = int(elyte.n_species + 2)
 
 # double layer potential in solution vector SV
-SVptr['phi_dl'] = np.arange(0,nvars_node*Ny,nvars_node, \
+SVptr['phi_dl'] = np.arange(0,nvars_node*N_y,nvars_node, \
     dtype='int')                                     
 # oxide mass density in solution vector SV
-SVptr['rho oxide'] = np.arange(1,nvars_node*Ny, nvars_node, \
+SVptr['rho oxide'] = np.arange(1,nvars_node*N_y, nvars_node, \
     dtype='int')                                      
 # electrolyte species mass densities in solution vector SV
-SVptr['rho_k elyte'] = np.ndarray(shape=(Ny, elyte.n_species),\
+SVptr['rho_k elyte'] = np.ndarray(shape=(N_y, elyte.n_species),\
     dtype='int')       
-for i in range(Ny):
+for i in range(N_y):
     SVptr['rho_k elyte'][i,:] = range(2 + i*nvars_node, 2 + i*nvars_node + \
          elyte.n_species)
 
@@ -105,4 +105,4 @@ pltptr['EMC'] = 6
 rho_oxide_init = oxide.density*params['eps_oxide_0']          # oxide concentraion
 rho_elyte_init = elyte.Y*elyte.density*params['eps_elyte_0']  # electrolyte concentrations
 SV0 = np.r_[phi_elyte_init,rho_oxide_init,rho_elyte_init]   # store in an array
-SV_0 = np.tile(SV0,Ny)                                      # tile SV0 based on discretization
+SV_0 = np.tile(SV0,N_y)                                      # tile SV0 based on discretization

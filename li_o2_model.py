@@ -15,7 +15,7 @@ from scipy.integrate import solve_ivp    #Integrator
 
 """ Read user inputs and initialize variables, vectors, etc. """
 "============================================================================"
-from li2o2_init import objs, params, SVptr, pltptr, SV_0, tspan, li_o2_residual
+from li_o2_init import objs, params, SVptr, pltptr, SV_0, tspan, li_o2_residual
 
 # Solve function using IVP solver
 SV = solve_ivp(lambda t, y: li_o2_residual(t,y,params,objs,SVptr), [0, tspan], \
