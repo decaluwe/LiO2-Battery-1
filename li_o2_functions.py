@@ -39,51 +39,48 @@ def li_o2_residual(t,SV,params,objs,SVptr):
     oxide.electric_potential = 0
     elyte.electric_potential = Phi_elyte
 
-    # Look at first node:
-    j = 0
-    for i in range(params['N_y']):
-        print(i)
+    for j in range(params['N_y']):
+        
+        # Oxide volume fraction:
+        eps_oxide = SV[SVptr['rho oxide'][j]] / oxide.density_mass    
+        # Electrolyte volume fraction:
+        eps_elyte = params['eps_elyte_0'] - (eps_oxide - params['eps_oxide_0'])
+        # Electrolytte mass density (kg per m3 of electrolyte phase)
+        rho_elyte = (sum(SV[SVptr['rho_k elyte'][j]])) / eps_elyte
+        # Set electrolyte state.  Species mass densities are normalized by Cantera:
+        elyte.TP = params['T'], ct.one_atm
+        elyte.Y = SV[SVptr['rho_k elyte'][j]]
 
-    # Oxide volume fraction:
-    eps_oxide = SV[SVptr['rho oxide'][j]] / oxide.density_mass    
-    # Electrolyte volume fraction:
-    eps_elyte = params['eps_elyte_0'] - (eps_oxide - params['eps_oxide_0'])
-    # Electrolytte mass density (kg per m3 of electrolyte phase)
-    rho_elyte = (sum(SV[SVptr['rho_k elyte'][j]])) / eps_elyte
-    # Set electrolyte state.  Species mass densities are normalized by Cantera:
-    elyte.TP = params['T'], ct.one_atm
-    elyte.Y = SV[SVptr['rho_k elyte'][j]]
+        # Calculate net production rates at interface
+        sdot = ca_surf.net_production_rates                 # interface production rates
 
-    # Calculate net production rates at interface
-    sdot = ca_surf.net_production_rates                 # interface production rates
+        # Calculate Faradaic current
+        i_far = -ct.faraday*ca_surf.get_net_production_rates(ca_bulk)            # Faradaic current
 
-    # Calculate Faradaic current
-    i_far = -ct.faraday*ca_surf.get_net_production_rates(ca_bulk)            # Faradaic current
+        # Calculate change in oxide concentration
+        W_oxide = oxide.mean_molecular_weight             # oxide molecular weight
+        A_int_avail = params['A_int'] - eps_oxide / params['th_oxide']  # available interface area on carbon particle
 
-    # Calculate change in oxide concentration
-    W_oxide = oxide.mean_molecular_weight             # oxide molecular weight
-    A_int_avail = params['A_int'] - eps_oxide / params['th_oxide']  # available interface area on carbon particle
+        sdot_oxide = ca_surf.get_net_production_rates(oxide)
+        dRhoOxidedt = sdot_oxide * A_int_avail * W_oxide
 
-    sdot_oxide = ca_surf.get_net_production_rates(oxide)
-    dRhoOxidedt = sdot_oxide * A_int_avail * W_oxide
+        # Calculate change in double layer potential
+        i_dl = (i_io[0] - i_io[-1])*params['dyInv'] - i_far*A_int_avail    # double layer current
+        dPhidt = i_dl / (params['C_dl']*params['A_int'])                           # double layer potential
 
-    # Calculate change in double layer potential
-    i_dl = (i_io[0] - i_io[-1])*params['dyInv'] - i_far*A_int_avail    # double layer current
-    dPhidt = i_dl / (params['C_dl']*params['A_int'])                           # double layer potential
+        # Calculate change in electrolyte concentrations
+        J_k_elyte_in = J_k_elyte[j,:]
+        J_k_elyte_out  = J_k_elyte[j+1,:]
+        sdot_elyte = ca_surf.get_net_production_rates(elyte)
 
-    # Calculate change in electrolyte concentrations
-    J_k_elyte_in = J_k_elyte[j,:]
-    J_k_elyte_out  = J_k_elyte[j+1,:]
-    sdot_elyte = ca_surf.get_net_production_rates(elyte)
+        
+        dRhoElytedt = (J_k_elyte_in - J_k_elyte_out)*params['dyInv'] + \
+            (sdot_elyte * A_int_avail * elyte.molecular_weights)
 
-    
-    dRhoElytedt = (J_k_elyte_in - J_k_elyte_out)*params['dyInv'] + \
-        (sdot_elyte * A_int_avail * elyte.molecular_weights)
-
-    # Load differentials into dSVdt
-    # Change in time for below variables
-    dSVdt[SVptr['phi_dl']] = dPhidt                            # double layer potential
-    dSVdt[SVptr['rho oxide']] = dRhoOxidedt                     # oxide concentration
-    dSVdt[SVptr['rho_k elyte']] = dRhoElytedt                     # electrolyte concentration
+        # Load differentials into dSVdt
+        # Change in time for below variables
+        dSVdt[SVptr['phi_dl'][j]] = dPhidt                            # double layer potential
+        dSVdt[SVptr['rho oxide'][j]] = dRhoOxidedt                     # oxide concentration
+        dSVdt[SVptr['rho_k elyte'][j]] = dRhoElytedt                     # electrolyte concentration
 
     return dSVdt
