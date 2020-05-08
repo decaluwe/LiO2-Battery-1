@@ -29,3 +29,9 @@ TP = 300, 101325             # inital temp, pressure [K, Pa]
 
 ctifile = 'lithium_o2_battery.yaml'     # Cantera input file
 li_elyte_name = 'Li+(e)'
+
+" Specifyt the residual function.  Import it as 'li_o2_residual"
+" This function should be written in li_o2_functions--the only term"
+" to edit is therefore the middle name."
+"============================================================================"
+from li2o2_functions import li_o2_residual as li_o2_residual
