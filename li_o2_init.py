@@ -12,11 +12,11 @@ from li_o2_inputs import *
 " Use inputs to calculate relevant quantities:"
 "============================================================================"
 # Geometric calculations
-V_part = 4/3 * np.pi * (d_part / 2)**3  # particle volume [m3]
-A_part = 4 * np.pi * (d_part / 2)**2    # particle surface area [m2]
+V_part = 4./3. * np.pi * (d_part / 2)**3  # particle volume [m3]
+A_part = 4. * np.pi * (d_part / 2)**2    # particle surface area [m2]
 A_int = eps_carbon * A_part / V_part      # interface area [m2/m3 total]
-A_oxide = np.pi * d_oxide**2 / 4        # oxide area contacting carbon particle
-V_oxide = 2/3 * np.pi * (d_oxide/2)**2 * th_oxide   # oxide volume [m3]
+A_oxide = np.pi * d_oxide**2 / 4.        # oxide area contacting carbon particle
+V_oxide = 2./3. * np.pi * (d_oxide/2)**2 * th_oxide   # oxide volume [m3]
 
 # Import necessary phases from Cantera
 # Make objects to handle calculations
@@ -78,8 +78,8 @@ nvars_node = int(elyte.n_species + 2)
 # double layer potential in solution vector SV
 SVptr['phi_dl'] = np.arange(0,nvars_node*N_y,nvars_node, \
     dtype='int')                                     
-# oxide mass density in solution vector SV
-SVptr['rho oxide'] = np.arange(1,nvars_node*N_y, nvars_node, \
+# oxide volume fraction in solution vector SV
+SVptr['eps oxide'] = np.arange(1,nvars_node*N_y, nvars_node, \
     dtype='int')                                      
 # electrolyte species mass densities in solution vector SV
 SVptr['rho_k elyte'] = np.ndarray(shape=(N_y, elyte.n_species),\
@@ -102,7 +102,7 @@ pltptr['EMC'] = 6
 
 # Set inital values
 # This shows the equations for change over time?
-rho_oxide_init = oxide.density*params['eps_oxide_0']          # oxide concentraion
+eps_oxide_init = params['eps_oxide_0']          # oxide concentraion
 rho_elyte_init = elyte.Y*elyte.density*params['eps_elyte_0']  # electrolyte concentrations
-SV0 = np.r_[phi_elyte_init,rho_oxide_init,rho_elyte_init]   # store in an array
-SV_0 = np.tile(SV0,N_y)                                      # tile SV0 based on discretization
+SV0 = np.r_[phi_elyte_init, eps_oxide_init, rho_elyte_init]   # store in an array
+SV_0 = np.tile(SV0, N_y)                   # tile SV0 based on discretization

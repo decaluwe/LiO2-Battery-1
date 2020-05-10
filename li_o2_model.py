@@ -25,7 +25,9 @@ SV = solve_ivp(lambda t, y: li_o2_residual(t,y,params,objs,SVptr), [0, tspan], \
 """ Plot solutions to concentrations and potentials """
 "============================================================================"
 plt.figure(1)
-plt.plot(SV.t,-SV.y[SVptr['phi_dl'][0]])
+for j in range(params['N_y']):
+    plt.plot(SV.t,-SV.y[SVptr['phi_dl']][j])
+    
 plt.xlabel('Time (s)')
 plt.ylabel('Double Layer Potential (V)')
 
@@ -36,7 +38,7 @@ plt.ylabel('Double Layer Potential (V)')
 
 oxide = objs['oxide']
 
-eps_oxide = SV.y[SVptr['rho oxide']] / oxide.density_mass      # oxide volume fraction
+eps_oxide = SV.y[SVptr['eps oxide']]    # oxide volume fraction
 eps_elyte = params['eps_elyte_0'] - (eps_oxide - params['eps_oxide_0'])
 A_int_avail = params['A_int'] - eps_oxide / params['th_oxide']
 

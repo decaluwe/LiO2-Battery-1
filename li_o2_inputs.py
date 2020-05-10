@@ -11,13 +11,13 @@ atol = 1e-10
 rtol = 2.5e-6
 
 # How long integration goes [s]. Should eventually pick a c-rate and sub in
-tspan = 7824
+tspan = 8604#4305 #7824
 
 i_ext = -1e-3              # [A/m2]    c-rate will calculate this
 cap = 1e-3*2.1733333       # battery capacity
 
 N_x = 1                      # 1D model track state in each cell and each layer
-N_y = 1                      # no. of cells in the y-direction
+N_y = 5                      # no. of cells in the y-direction
 Nvars = 3                   # no. of variables
 th_ca = 50e-6               # cathode thickness [m]
 d_part = 10e-6              # carbon particle diameter [m]
