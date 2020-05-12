@@ -34,7 +34,7 @@ The model requires several dependencies, including:
 - Matplotlib
 - SciPy
 
-It is highly recommended taht you install and manage dependencies via Conda.  Download and instal Miniconda (the full Anaconda package is okay, but not required.)
+It is highly recommended that you install and manage dependencies via Conda.  Download and instal Miniconda (the full Anaconda package is okay, but not required.)
 
 Open up a terminal or anaconda prompt window and install the development version of Cantera.  The following command will install it into an environment named `li-o2-battery`.  You can replace this with any environment name you desire.
 
