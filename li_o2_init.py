@@ -67,10 +67,17 @@ params['dyInv'] = N_y/th_ca
 params["C_dl"] = C_dl
 params['i_Li_elyte'] = elyte.species_index(li_elyte_name)
 
+# Bulk electrolyte diffusion coefficients:
+params['D_o_elyte'] = np.zeros_like(elyte.X)
+params['z_k_elyte'] = np.zeros_like(elyte.X)
+for j in D_k_elyte:
+    params['D_o_elyte'][elyte.species_index(j)] = D_k_elyte[j]
+    params['z_k_elyte'][elyte.species_index(j)] = elyte.species(j).charge
+    
+params['n bruggeman'] = n_bruggeman
 # Store solution vector pointers in a common 'SVptr' dict
 # One spot for each of the species, can change Cantera file to change # and automatically adapts
 SVptr = {}
-
 # Variables per finite volume (aka 'node'): elyte electric potential, oxide 
 #     density, electrolyte species densities
 nvars_node = int(elyte.n_species + 2)

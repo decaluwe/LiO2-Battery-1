@@ -137,7 +137,7 @@ species:
     model: constant-volume
     molar-volume: 81.02365079365079 cm^3/mol
   note: |-
-    Propylene carbonate, MW: 102.0898 g/mol
+    Ethyl Methyl Carbonate (EMC), MW: 102.0898 g/mol
     Density of electrolyte: 1260.0 kg/m3 (used to calculate species molar volume
     as molecular weight (MW)/density)
     Molar enthalpy and entropy set to zero (dummy entries as this species does
@@ -179,8 +179,8 @@ species:
   composition: {O: 2}
   thermo: 
     model: constant-cp
-    h0: 0.0 kJ/mol
-    s0: 205.2 J/mol/K
+    h0: -39.2 kJ/mol
+    s0: 0. J/mol/K
   equation-of-state:
     model: constant-volume
     molar-volume: 28.0445 cm^3/mol
@@ -237,6 +237,6 @@ anode-surf-reactions:
 air-electrolyte-reactions:
 - equation: O2(g) <=> O2(e)  # Reaction 2
   id: cathode_gas_reaction
-  rate-constant: {A: 2.95e-2, b: 0.0, Ea: 0 kJ/mol}
+  rate-constant: {A: 5.95e2, b: 0.0, Ea: 0 kJ/mol}
   exchange-current-density-formulation: true
   beta: 0.5

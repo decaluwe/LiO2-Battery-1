@@ -24,36 +24,53 @@ SV = solve_ivp(lambda t, y: li_o2_residual(t,y,params,objs,SVptr), [0, tspan], \
 
 """ Plot solutions to concentrations and potentials """
 "============================================================================"
+legends = []
+[legends.append(str(i+1)) for i in range(params['N_y'])]
+
 plt.figure(1)
-for j in range(params['N_y']):
-    plt.plot(SV.t,-SV.y[SVptr['phi_dl']][j])
-    
+[plt.plot(SV.t,-SV.y[SVptr['phi_dl']][j]) for j in range(params['N_y'])]
 plt.xlabel('Time (s)')
 plt.ylabel('Double Layer Potential (V)')
+plt.legend(legends)
 
-#plt.figure(2)
-#plt.plot(SV.t,SV.y[SVptr['oxide']])
-#plt.xlabel('Time (s)')
-#plt.ylabel('Oxide Concentration (kg/m3)')
+plt.figure(2)
+[plt.plot(SV.t,SV.y[SVptr['eps oxide'][j]]) for j in range(params['N_y'])]
+plt.xlabel('Time (s)')
+plt.ylabel('Oxide volume fraction')
+plt.legend(legends)
 
 oxide = objs['oxide']
+elyte = objs['elyte']
 
 eps_oxide = SV.y[SVptr['eps oxide']]    # oxide volume fraction
 eps_elyte = params['eps_elyte_0'] - (eps_oxide - params['eps_oxide_0'])
 A_int_avail = params['A_int'] - eps_oxide / params['th_oxide']
 
-#plt.figure(3)
-#plt.plot(SV.t,eps_elyte)
-#plt.xlabel('Time (s)')
-#plt.ylabel('Elyte Volume Fraction')
-#plt.show()
+plt.figure(3)
+[plt.plot(SV.t,eps_elyte[j]) for j in range(params['N_y'])]
+plt.xlabel('Time (s)')
+plt.ylabel('Elyte Volume Fraction')
+plt.legend(legends)
 
-#plt.figure(4)
-#plt.plot(SV.t/3600 * -i_ext,SV.y[SVptr['phi_dl']])
-#plt.xlabel('Capacity (Ah/m2)')
-#plt.ylabel('Voltage (V)')
+plt.figure(4)
+[plt.plot(SV.t, SV.y[SVptr['rho_k elyte'][j,2]]/eps_elyte[j]) for j in range(params['N_y'])]
+plt.xlabel('Time (s)')
+plt.ylabel(elyte.species_names[2]+' kg/m3')
+plt.legend(legends)
+
+plt.figure(7)
+[plt.plot(SV.t, SV.y[SVptr['rho_k elyte'][j,2]]) for j in range(params['N_y'])]
+plt.xlabel('Time (s)')
+plt.ylabel(elyte.species_names[2]+' kg/m3')
+plt.legend(legends)
 
 plt.figure(5)
+[plt.plot(SV.t, SV.y[SVptr['rho_k elyte'][j,4]]) for j in range(params['N_y'])]
+plt.xlabel('Time (s)')
+plt.ylabel(elyte.species_names[4]+' kg/m3')
+plt.legend(legends)
+
+plt.figure(6)
 plt.plot(SV.t,A_int_avail[0,:])
 plt.xlabel('Time (s)')
 plt.ylabel('Available Area (m2)')

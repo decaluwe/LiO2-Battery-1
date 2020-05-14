@@ -11,7 +11,7 @@ atol = 1e-10
 rtol = 2.5e-6
 
 # How long integration goes [s]. Should eventually pick a c-rate and sub in
-tspan = 8604#4305 #7824
+tspan = 2100604#4305 #7824
 
 i_ext = -1e-3              # [A/m2]    c-rate will calculate this
 cap = 1e-3*2.1733333       # battery capacity
@@ -26,6 +26,17 @@ th_oxide = 5e-6             # thickness of oxide ellipsoid [m]
 C_dl = 1.1e-6               # double layer capacitance [F/m2]
 
 TP = 300, 101325             # inital temp, pressure [K, Pa]
+
+# Electrolyte bulk diffusion coefficients
+D_k_elyte = {}
+D_k_elyte['Li+(e)'] = 1e-13          # bulk diff coeff Li+ in elyte (m2/s)
+D_k_elyte['PF6-(e)'] = 1e-13         # bulk diff coeff PF6- in elyte (m2/s)
+D_k_elyte['O2(e)'] = 1.75e-14           # bulk diff coeff O2 in elyte (m2/s)
+D_k_elyte['C3H4O3(e)'] = 1           # EC diffusion is fast
+D_k_elyte['C4H8O3(e)'] = 1           # EMC diffusion is fast
+
+# Bruggeman coeff. for tortuosity factor: tau_fac = eps_elyte^(-n_bruggeman)
+n_bruggeman = 0.5 
 
 ctifile = 'li_o2_battery.yaml'     # Cantera input file
 li_elyte_name = 'Li+(e)'
