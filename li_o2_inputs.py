@@ -10,11 +10,11 @@ eps_carbon = 1. - eps_elyte_init - eps_binder_init - eps_oxide_init      # initi
 atol = 1e-10
 rtol = 2.5e-6
 
-# How long integration goes [s]. Should eventually pick a c-rate and sub in
-tspan = 2100604#4305 #7824
-
-i_ext = -1e-3              # [A/m2]    c-rate will calculate this
+i_ext = -1e1              # [A/m2]    c-rate will calculate this
 cap = 1e-3*2.1733333       # battery capacity
+
+# How long integration goes [s]. Should eventually pick a c-rate and sub in
+tspan = 230450000*abs(1e-3/i_ext)#3100604#4305 #7824
 
 N_x = 1                      # 1D model track state in each cell and each layer
 N_y = 5                      # no. of cells in the y-direction
@@ -29,9 +29,9 @@ TP = 300, 101325             # inital temp, pressure [K, Pa]
 
 # Electrolyte bulk diffusion coefficients
 D_k_elyte = {}
-D_k_elyte['Li+(e)'] = 1e-13          # bulk diff coeff Li+ in elyte (m2/s)
-D_k_elyte['PF6-(e)'] = 1e-13         # bulk diff coeff PF6- in elyte (m2/s)
-D_k_elyte['O2(e)'] = 1.75e-14           # bulk diff coeff O2 in elyte (m2/s)
+D_k_elyte['Li+(e)'] = 4e-11          # bulk diff coeff Li+ in elyte (m2/s)
+D_k_elyte['PF6-(e)'] = 4e-13         # bulk diff coeff PF6- in elyte (m2/s)
+D_k_elyte['O2(e)'] = 7e-12           # bulk diff coeff O2 in elyte (m2/s)
 D_k_elyte['C3H4O3(e)'] = 1           # EC diffusion is fast
 D_k_elyte['C4H8O3(e)'] = 1           # EMC diffusion is fast
 

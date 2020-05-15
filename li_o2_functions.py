@@ -31,7 +31,7 @@ def li_o2_residual(t,SV,params,objs,SVptr):
 
     # Initialize electrolyte species flux vectors
     J_k_elyte = np.zeros((params['N_y']+1, int(elyte.n_species)))
-    J_k_elyte[-1,params['i_Li_elyte']] = i_ext/F
+    J_k_elyte[-1,params['i_Li_elyte']] = W_elyte[params['i_Li_elyte']]*i_ext/F
 
     # Electrolyte species production rates due to double layer current:
     sdot_dl = np.zeros_like(elyte.X)
@@ -63,14 +63,16 @@ def li_o2_residual(t,SV,params,objs,SVptr):
         eps_elyte_next = params['eps_elyte_0'] - (eps_oxide_next -\
             params['eps_oxide_0'])
         
-        J_k_elyte[j+1, :] = mass_fluxes(rho_k_elyte, rho_k_elyte_next, \
-            phi_elyte, phi_elyte_next, eps_elyte, eps_elyte_next,\
-            params, W_elyte)
+        J_k_elyte[j+1, :], i_io_check = mass_fluxes(params, W_elyte, \
+            rho_k_elyte, rho_k_elyte_next, phi_elyte, phi_elyte_next, \
+            eps_elyte,  eps_elyte_next)
+        
+        # print(i_io_check)
         # SCDm 09 May 2020--This is backwards, for now, just to implement a 
         #  simple transport function.  The eventual implementation should 
         #  calculate the species fluxes, and use this to calculate i_io.
-        i_io[j+1] = (phi_elyte - phi_elyte_next)*params['dyInv']/R_io
-        J_k_elyte[j+1,params['i_Li_elyte']] = i_io[j+1]/F
+        i_io[j+1] = i_io_check#(phi_elyte - phi_elyte_next)*params['dyInv']/R_io
+        # J_k_elyte[j+1,params['i_Li_elyte']] = i_io[j+1]/F
 
         dEpsOxide_dt = sdot_oxide * A_int_avail * Vbar_oxide   
 
@@ -78,14 +80,15 @@ def li_o2_residual(t,SV,params,objs,SVptr):
         i_dl = (i_io[j] - i_io[j+1])*params['dyInv'] - i_far*A_int_avail 
         # Change in double layer potential per unit time 
         dPhi_dt = i_dl / (params['C_dl']*params['A_int'])
-
+        # print(j, i_far, sdot_elyte[2], i_dl)
         # Double layer current consumes Li+(e)
         sdot_dl[params['i_Li_elyte']] = -i_dl/F
 
         # Calculate change in electrolyte concentrations       
-        dRhoElyte_dt = (J_k_elyte[j,:] - J_k_elyte[j+1,:])*params['dyInv'] + \
-            sdot_elyte*A_int_avail*W_elyte + sdot_dl
-
+        dRhoElyte_dt = ((J_k_elyte[j,:] - J_k_elyte[j+1,:])*params['dyInv'] + \
+            sdot_elyte*A_int_avail*W_elyte + sdot_dl*W_elyte) - \
+            rho_k_elyte*dEpsOxide_dt
+        
         # Load differentials into dSVdt
         # Change in time for below variables
         dSVdt[SVptr['phi_dl'][j]] = dPhi_dt                            # double layer potential
@@ -118,40 +121,29 @@ def li_o2_residual(t,SV,params,objs,SVptr):
     #   Double layer current:
     i_dl = (i_io[j] - i_io[j+1])*params['dyInv'] - i_far*A_int_avail 
     
+    # print(j, i_far, sdot_elyte[2], i_dl)
     # Double layer potential rate of change:
     dPhi_dt = i_dl / (params['C_dl']*params['A_int'])   
     # Convert the double layer current to an equivalent reaction rate consuming 
     #    Li+(e):   
     sdot_dl[params['i_Li_elyte']] = -i_dl/F
 
-    # Calculate change in electrolyte concentrations    
-    # print(J_k_elyte[j,:])
-    # print(J_k_elyte[j+1,:])
-    # print(sdot_elyte*A_int_avail*W_elyte + sdot_dl)
-    dRhoElyte_dt = (J_k_elyte[j,:] - J_k_elyte[j+1,:])*params['dyInv'] + \
-        sdot_elyte*A_int_avail*W_elyte + sdot_dl
+    # Calculate change in electrolyte concentrations   
+    dRhoElyte_dt = ((J_k_elyte[j,:] - J_k_elyte[j+1,:])*params['dyInv'] + \
+        sdot_elyte*A_int_avail*W_elyte + sdot_dl*W_elyte) - \
+        rho_k_elyte*dEpsOxide_dt
 
+    # print(j, J_k_elyte[j,2]*params['dyInv'], J_k_elyte[j+1,2]*params['dyInv'], \
+    #     sdot_elyte[2]*A_int_avail*W_elyte[2], sdot_dl[2]*W_elyte[2])
     # Load differentials into dSVdt
     # Change in time for below variables
     dSVdt[SVptr['phi_dl'][j]] = dPhi_dt             # double layer potential
     dSVdt[SVptr['eps oxide'][j]] = dEpsOxide_dt     # oxide concentration
     dSVdt[SVptr['rho_k elyte'][j]] = dRhoElyte_dt   # electrolyte concentration
-
+    
     return dSVdt
 
 " ================= HELPER FUNCTIONS ================= "
-
-def read_state(SV, SVptr, j):
-    # double layer (i.e. elyte) electric potential:
-    phi_elyte = SV[SVptr['phi_dl'][j]]
-
-    # Oxide volume fraction:
-    eps_oxide = SV[SVptr['eps oxide'][j]]
-
-    # Electrolyte species mass fracionts:
-    rho_k_elyte = SV[SVptr['rho_k elyte'][j]]
-
-    return phi_elyte, eps_oxide, rho_k_elyte
     
 def read_cantera_objs(objs):
     gas = objs['gas']
@@ -164,6 +156,18 @@ def read_cantera_objs(objs):
     Li_surf = objs['Li_surf']
 
     return gas, ca_bulk, elyte, oxide, ca_surf, air_elyte, Li_bulk, Li_surf
+
+def read_state(SV, SVptr, j):
+    # double layer (i.e. elyte) electric potential:
+    phi_elyte = SV[SVptr['phi_dl'][j]]
+
+    # Oxide volume fraction:
+    eps_oxide = SV[SVptr['eps oxide'][j]]
+
+    # Electrolyte species mass fracionts:
+    rho_k_elyte = SV[SVptr['rho_k elyte'][j]]
+
+    return phi_elyte, eps_oxide, rho_k_elyte
 
 def set_state(phi_elyte, rho_k_elyte, params, ca_bulk, oxide, elyte, air_elyte,\
     gas):
@@ -193,8 +197,8 @@ def read_rates(oxide, elyte, ca_bulk, ca_surf):
 
     return sdot_oxide, sdot_elyte, i_far 
 
-def mass_fluxes(rho_k, rho_k_next, phi_elyte, phi_elyte_next, eps_elyte, \
-    eps_elyte_next, params, W_elyte):
+def mass_fluxes(params, W_elyte, rho_k, rho_k_next, phi_elyte, phi_elyte_next, \
+    eps_elyte, eps_elyte_next):
     
     # Store quantity F/RT:
     FoRT = ct.faraday/ct.gas_constant/params['T']
@@ -206,22 +210,22 @@ def mass_fluxes(rho_k, rho_k_next, phi_elyte, phi_elyte_next, eps_elyte, \
 
     # Next location:
     C_k_next = rho_k_next / W_elyte        # species molar densities
-    Y_k_next = rho_k_next/sum(rho_k_next)  # species mass fractions
     X_k_next = C_k_next/sum(C_k_next)      # species mole fractions
 
     # Take averages to find interface values.  Eventually this should be 
     #   weighted by the volume dimensions:
     C_k_elyte_int = 0.5*(C_k + C_k_next)
-    X_k_int = 0.5*(X_k + X_k_next)
     eps_int = 0.5*(eps_elyte + eps_elyte_next)
 
     # Chemical diffusion and migration diffusion coefficients: 
-    D_k_elyte = params['D_o_elyte']*eps_int**(1. - params['n bruggeman'])
+    D_k_elyte = params['D_o_elyte']*eps_int**(1. + params['n bruggeman'])
     D_k_elyte_mig = D_k_elyte*params['z_k_elyte']*FoRT*C_k_elyte_int
     
-    N_k = (D_k_elyte*(rho_k/eps_elyte - rho_k_next/eps_elyte_next)+ \
+    N_k = (D_k_elyte*(C_k/eps_elyte - C_k_next/eps_elyte_next)+ \
         D_k_elyte_mig*(phi_elyte - phi_elyte_next))*params['dyInv']
+
+    i_io = np.dot(N_k, params['z_k_elyte'])*ct.faraday
 
     J_k = W_elyte*N_k
 
-    return J_k
+    return J_k, i_io
