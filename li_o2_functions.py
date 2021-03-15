@@ -162,10 +162,10 @@ def read_state(SV, SVptr, j):
     phi_elyte = SV[SVptr['phi_dl'][j]]
 
     # Oxide volume fraction:
-    eps_oxide = SV[SVptr['eps oxide'][j]]
+    eps_oxide = abs(SV[SVptr['eps oxide'][j]])
 
     # Electrolyte species mass fracionts:
-    rho_k_elyte = SV[SVptr['rho_k elyte'][j]]
+    rho_k_elyte = abs(SV[SVptr['rho_k elyte'][j]])
 
     return phi_elyte, eps_oxide, rho_k_elyte
 
