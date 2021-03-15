@@ -36,10 +36,10 @@ elyte.TP = TP
 ca_surf.TP = TP
 ca_bulk.TP = TP
 
-# Store these phases in a common 'objs' dict
-# This takes the data from Cantera and stores data for use
-# Python library so efficiently moves around
-# A dictionary associates a key word with a value
+# Store these phases in a common 'objs' dict.
+# This takes the data from Cantera and stores data for use in a Python 
+# dictionary so we can efficiently pass them to various functions. A dictionary
+# associates a key word with a value.
 objs = {}
 objs['gas'] = gas
 objs['ca_bulk'] = ca_bulk

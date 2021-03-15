@@ -18,30 +18,35 @@ from scipy.integrate import solve_ivp    #Integrator
 from li_o2_init import objs, params, SVptr, pltptr, SV_0, tspan, li_o2_residual
 
 # Solve function using IVP solver
-SV = solve_ivp(lambda t, y: li_o2_residual(t,y,params,objs,SVptr), [0, tspan], \
-     SV_0, method='BDF',atol=params['atol'],rtol=params['rtol'])
-
-
+SV_discharge = solve_ivp(lambda t, y: li_o2_residual(t,y,params,objs,SVptr), \
+    [0, tspan], SV_0, method='BDF',atol=params['atol'],rtol=params['rtol'])
+print('Done with discharge.')
+SV_0 = SV_discharge.y[-1,:]
+params['i_ext'] *= -1
+SV_charge = solve_ivp(lambda t, y: li_o2_residual(t,y,params,objs,SVptr), \
+    [0, tspan*0.2], SV_0, method='BDF',atol=params['atol'],rtol=params['rtol'])
 """ Plot solutions to concentrations and potentials """
 "============================================================================"
 legends = []
 [legends.append(str(i+1)) for i in range(params['N_y'])]
 
 plt.figure(1)
-[plt.plot(SV.t,-SV.y[SVptr['phi_dl']][j]) for j in range(params['N_y'])]
+for j in range(params['N_y']):
+    # plt.plot(SV_discharge.t,-SV_discharge.y[SVptr['phi_dl']][j]) 
+    plt.plot(SV_charge.t,-SV_charge.y[SVptr['phi_dl']][j]) 
 plt.xlabel('Time (s)')
 plt.ylabel('Double Layer Potential (V)')
 plt.legend(legends)
 
 plt.figure(2)
-[plt.plot(SV.t,SV.y[SVptr['eps oxide'][j]]) for j in range(params['N_y'])]
+[plt.plot(SV_charge.t,SV_charge.y[SVptr['eps oxide'][j]]) for j in range(params['N_y'])]
 plt.xlabel('Time (s)')
 plt.ylabel('Oxide volume fraction')
 plt.legend(legends)
 
 oxide = objs['oxide']
 elyte = objs['elyte']
-
+SV = SV_charge
 eps_oxide = SV.y[SVptr['eps oxide']]    # oxide volume fraction
 eps_elyte = params['eps_elyte_0'] - (eps_oxide - params['eps_oxide_0'])
 A_int_avail = params['A_int'] - eps_oxide / params['th_oxide']
