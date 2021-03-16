@@ -14,15 +14,15 @@ i_ext = -1e-1              # [A/m2]    c-rate will calculate this
 cap = 1e-3*2.1733333       # battery capacity
 
 # How long integration goes [s]. Should eventually pick a c-rate and sub in
-tspan = 230450000*abs(1e0/i_ext)#3100604#4305 #7824
+tspan = 1450000*abs(1.26e-3/i_ext)
 
 N_x = 1                      # 1D model track state in each cell and each layer
 N_y = 5                      # no. of cells in the y-direction
 Nvars = 3                   # no. of variables
-th_ca = 50e-6               # cathode thickness [m]
-d_part = 5e-6              # carbon particle diameter [m]
+th_ca = 25e-6               # cathode thickness [m]
+d_part = 2.5e-6              # carbon particle diameter [m]
 d_oxide = 0.5e-6              # oxide particle diameter [m]
-th_oxide = 5e-6             # thickness of oxide ellipsoid [m]
+th_oxide = 5e-9             # thickness of oxide ellipsoid [m]
 C_dl = 1.1e-6               # double layer capacitance [F/m2]
 
 TP = 300, 101325             # inital temp, pressure [K, Pa]

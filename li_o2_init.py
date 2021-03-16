@@ -101,11 +101,11 @@ for i in range(N_y):
 # Store plot pointers in a common 'pltptr' dict
 # Stored values to be used in plot
 pltptr = {}
-pltptr['O2'] = 2
-pltptr['Li+'] = 3
-pltptr['PF6-'] = 4
-pltptr['EC'] = 5
-pltptr['EMC'] = 6
+pltptr['O2'] = 6
+pltptr['Li+'] = 4
+pltptr['PF6-'] = 5
+pltptr['EC'] = 2
+pltptr['EMC'] = 3
 
 # Set inital values
 # This shows the equations for change over time?
