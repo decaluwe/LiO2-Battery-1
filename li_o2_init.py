@@ -55,6 +55,7 @@ objs['Li_surf'] = Li_surf
 # Dictionary to keep like things together
 params = {}
 params['i_ext'] = i_ext
+params['n_cycles'] = n_cycles
 params['T'] = TP[0]
 params['eps_elyte_0'] = eps_elyte_init
 params['eps_oxide_0'] = eps_oxide_init

@@ -11,6 +11,7 @@ def li_o2_residual(t,SV,params,objs,SVptr):
     # Read out and store some constants:
     # Faraday's constant (C/kmol e-)
     F = ct.faraday
+
     # oxide molar volume
     Vbar_oxide = oxide.mean_molecular_weight / oxide.density_mass       
     # ELectrolyte molar weights
@@ -158,14 +159,18 @@ def read_cantera_objs(objs):
     return gas, ca_bulk, elyte, oxide, ca_surf, air_elyte, Li_bulk, Li_surf
 
 def read_state(SV, SVptr, j):
+    small = 1e-20
     # double layer (i.e. elyte) electric potential:
     phi_elyte = SV[SVptr['phi_dl'][j]]
 
     # Oxide volume fraction:
-    eps_oxide = abs(SV[SVptr['eps oxide'][j]])
+    eps_oxide = max(SV[SVptr['eps oxide'][j]], small)
 
     # Electrolyte species mass fracionts:
-    rho_k_elyte = abs(SV[SVptr['rho_k elyte'][j]])
+    
+    rho_k_elyte = SV[SVptr['rho_k elyte'][j]]
+    small_array = small*np.ones_like(rho_k_elyte)
+    rho_k_elyte = np.maximum(rho_k_elyte,small_array)
 
     return phi_elyte, eps_oxide, rho_k_elyte
 

@@ -12,6 +12,7 @@ rtol = 1e-6
 
 i_ext = -1e-1              # [A/m2]    c-rate will calculate this
 cap = 1e-3*2.1733333       # battery capacity
+n_cycles = 1
 
 # How long integration goes [s]. Should eventually pick a c-rate and sub in
 tspan = 1450000*abs(1.26e-3/i_ext)

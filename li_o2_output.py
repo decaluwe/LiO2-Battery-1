@@ -10,7 +10,7 @@ def plot_profiles(SV, SVptr, objs, params, pltptr):
     legends = []
     [legends.append(str(i+1)) for i in range(params['N_y'])]
 
-    fig, axs = plt.subplots(4,2, sharex=True, figsize=(10., 12.))
+    fig, axs = plt.subplots(4,2, sharex=True, figsize=(8., 9.6))
     fig.tight_layout
 
     # Plot Cell Potential:
@@ -59,4 +59,4 @@ def plot_profiles(SV, SVptr, objs, params, pltptr):
     axs[3,1].set(xlabel='Time (s)', ylabel='Concentration (kg/m3 tot)')
 
     fig.tight_layout()
-    plt.show()
+    # plt.show()

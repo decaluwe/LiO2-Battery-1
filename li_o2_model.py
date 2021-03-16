@@ -15,14 +15,16 @@ from scipy.integrate import solve_ivp   # Integrator
 # Import cantera objects, parameters, pointers, initial solution vector SV_0, 
 #    and residual function
 from li_o2_init import objs, params, SVptr, pltptr, SV_0, tspan, li_o2_residual
+from li_o2_terminate import voltage_min
 
-# Save user-defined i_ext:
-i_input = params['i_ext']
+flag_discharge, flag_charge = False, False
 
-steps = ('Equilibrating', 'Discharging')#, 'Equilibrating', 'Charging')
-currents = ([-1e-16, params['i_ext'], 1e-16, -params['i_ext']])
+# Possible steps include 'Equilibrating', 'Discharging', and 'Charging.'
+steps = params['n_cycles']*('Equilibrating', 'Discharging')
+currents = params['n_cycles']*([-1e-16, params['i_ext'], 2e-12, 
+    -params['i_ext']])
 
-# Clear a blank line:
+# Print a blank line:
 print('\n')
 
 for i, step in enumerate(steps):
@@ -30,20 +32,32 @@ for i, step in enumerate(steps):
     params['i_ext'] = currents[i]
     print('     Current = ', round(currents[i],3),'\n')
     if step=='Discharging':
-        SV_discharge =  solve_ivp(lambda t, y: li_o2_residual(t,y,params,objs,  
-            SVptr), [0, tspan], SV_0, method='BDF',atol=params['atol'],rtol=params['rtol'])
+        flag_discharge = True
+        voltage_min.terminal = True
+        SV_discharge =  solve_ivp(li_o2_residual, [0, tspan], SV_0, 
+            method='BDF', args=(params,objs,SVptr), events=voltage_min, atol=params['atol'],rtol=params['rtol'])
         SV_0 = SV_discharge.y[:,-1]
     elif step=='Charging':
-        SV_charge =  solve_ivp(lambda t, y: li_o2_residual(t,y,params,objs,  
-            SVptr), [0, tspan], SV_0, method='BDF',atol=params['atol'],rtol=params['rtol'])
+        flag_charge = True
+        voltage_min.terminal = True
+        SV_charge =  solve_ivp(li_o2_residual, [0, tspan], SV_0, method='BDF',
+            args=(params, objs, SVptr), atol=params['atol'],rtol=params['rtol'])
         SV_0 = SV_charge.y[:,-1]
     else:
-        SV_equil = solve_ivp(lambda t, y: li_o2_residual(t,y,params,objs,SVptr),
-            [0, tspan], SV_0, method='BDF',atol=params['atol'],rtol=params['rtol'])
+        voltage_min.terminal = False
+        SV_equil = solve_ivp(li_o2_residual, [0, tspan], SV_0, method='BDF', 
+            args=(params, objs, SVptr), events=voltage_min, atol=params['atol'],rtol=params['rtol'])
         SV_0 = SV_equil.y[:,-1]
 
 print('Done with simulation. Preparing outputs.\n')
 from li_o2_output import plot_profiles
+import matplotlib.pyplot as plt
 
 # Plot discharge profiles:
-plot_profiles(SV_discharge, SVptr, objs, params, pltptr)
+if flag_discharge:
+    plot_profiles(SV_discharge, SVptr, objs, params, pltptr)
+# plot_profiles(SV_equil, SVptr, objs, params, pltptr)
+# Plot charge profiles:
+if flag_charge:
+    plot_profiles(SV_charge, SVptr, objs, params, pltptr)
+plt.show()
