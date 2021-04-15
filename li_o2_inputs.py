@@ -1,4 +1,5 @@
 "========== USER INPUTS for 1D Li-O2 Battery simulation =========="
+save_name = '01C_150nmThickOxide'
 
 phi_elyte_init = -3.19              # double layer voltage [V]
 eps_elyte_init = 0.5                # initial electrolyte volume fraction [-]
@@ -10,20 +11,18 @@ eps_carbon = 1. - eps_elyte_init - eps_binder_init - eps_oxide_init      # initi
 atol = 1e-8
 rtol = 1e-6
 
-i_ext = -1e-1              # [A/m2]    c-rate will calculate this
-cap = 1e-3*2.1733333       # battery capacity
+# Specify one of i_ext or C_rate.  Comment the other out.
+# i_ext = -1e-1              # [A/m2]    c-rate will calculate this
+C_rate = 0.1
 n_cycles = 1
 
-# How long integration goes [s]. Should eventually pick a c-rate and sub in
-tspan = 1450000*abs(1.26e-3/i_ext)
-
 N_x = 1                      # 1D model track state in each cell and each layer
-N_y = 5                      # no. of cells in the y-direction
+N_y = 10                      # no. of cells in the y-direction
 Nvars = 3                   # no. of variables
 th_ca = 25e-6               # cathode thickness [m]
 d_part = 2.5e-6              # carbon particle diameter [m]
-d_oxide = 0.5e-6              # oxide particle diameter [m]
-th_oxide = 5e-9             # thickness of oxide ellipsoid [m]
+d_oxide = 1.5e-6              # oxide particle diameter [m]
+th_oxide = 850e-9             # thickness of oxide ellipsoid [m]
 C_dl = 1.1e-6               # double layer capacitance [F/m2]
 
 TP = 300, 101325             # inital temp, pressure [K, Pa]

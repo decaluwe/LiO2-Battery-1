@@ -50,6 +50,15 @@ objs['air_elyte'] = air_elyte
 objs['Li_bulk'] = Li_bulk
 objs['Li_surf'] = Li_surf
 
+# Battery capacity: Ah/m2
+Capacity = th_ca*(1-eps_carbon)/oxide.partial_molar_volumes[0]*2*ct.faraday/3600
+
+if C_rate:
+    i_ext = -C_rate*Capacity
+else:
+    C_rate = i_ext/Capacity
+
+tspan = 3600/C_rate
 # Store parameters in a common 'params' dict
 # This allows for an unknown amount of arguments and any type of data to be stored at once?
 # Dictionary to keep like things together
@@ -67,6 +76,7 @@ params['th_oxide'] = th_oxide
 params['dyInv'] = N_y/th_ca
 params["C_dl"] = C_dl
 params['i_Li_elyte'] = elyte.species_index(li_elyte_name)
+params['save_name'] = save_name
 
 # Bulk electrolyte diffusion coefficients:
 params['D_o_elyte'] = np.zeros_like(elyte.X)

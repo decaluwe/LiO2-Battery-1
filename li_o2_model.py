@@ -56,8 +56,10 @@ import matplotlib.pyplot as plt
 # Plot discharge profiles:
 if flag_discharge:
     plot_profiles(SV_discharge, SVptr, objs, params, pltptr)
+
 # plot_profiles(SV_equil, SVptr, objs, params, pltptr)
 # Plot charge profiles:
 if flag_charge:
     plot_profiles(SV_charge, SVptr, objs, params, pltptr)
+
 plt.show()
